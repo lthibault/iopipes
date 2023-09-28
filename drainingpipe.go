@@ -22,7 +22,7 @@ type DrainingPipeWriter struct {
 	buffer   []byte
 	draining bool
 	closed   bool
-	tell     chan<- bool
+	tell     chan<- struct{}
 	capacity int
 }
 
@@ -39,7 +39,7 @@ type DrainingPipeWriter struct {
 //
 // N.B. The Writer end of this pipe will not work with io.Copy because it
 // returns an error when the pipe is full (but the pipe is still valid).
-func DrainingPipe(capacity int, tell chan<- bool) (*DrainingPipeReader, *DrainingPipeWriter) {
+func DrainingPipe(capacity int, tell chan<- struct{}) (*DrainingPipeReader, *DrainingPipeWriter) {
 	w := &DrainingPipeWriter{
 		tell:     tell,
 		capacity: capacity,
@@ -66,7 +66,7 @@ func (r *DrainingPipeReader) Read(p []byte) (int, error) {
 	// Tell that the drain completed
 	if r.draining && len(r.buffer) == 0 && r.tell != nil {
 		r.draining = false
-		r.tell <- true
+		r.tell <- struct{}{}
 	}
 
 	// Set error to EOF, if closed and we're at the end of the buffer

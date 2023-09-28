@@ -119,7 +119,7 @@ func TestDrainingPipeCloseChan(t *testing.T) {
 
 	assert := require.New(t)
 
-	c := make(chan bool)
+	c := make(chan struct{})
 	r, w := DrainingPipe(0, c)
 	assert.NoError(w.Close(), "Closing should never cause an error")
 
@@ -136,8 +136,8 @@ func TestDrainingPipeDrainChan(t *testing.T) {
 
 	assert := require.New(t)
 
-	c := make(chan bool)
-	quit := make(chan bool)
+	c := make(chan struct{})
+	quit := make(chan struct{})
 
 	d := []byte("hello test")
 
@@ -149,8 +149,8 @@ func TestDrainingPipeDrainChan(t *testing.T) {
 
 	go func() {
 		select {
-		case b := <-c:
-			assert.True(b)
+		case _, ok := <-c:
+			assert.True(ok)
 			close(quit)
 			return
 		case <-quit:
