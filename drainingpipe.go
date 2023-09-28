@@ -22,7 +22,7 @@ type DrainingPipeWriter struct {
 	buffer   []byte
 	draining bool
 	closed   bool
-	tell     chan<- struct{}
+	sig      chan<- struct{}
 	capacity int
 }
 
@@ -31,7 +31,7 @@ type DrainingPipeWriter struct {
 // that initially overflows the buffer will succeed.  This means that the
 // buffer can grow arbitrarily bigger than the specified capacity.
 //
-// Additionally, you may supply a channel tell that will be told whenever
+// Additionally, you may supply a signal channel that will be told whenever
 // the draining channel has been emptied, so that more bytes can be requested
 // to be written.
 //
@@ -39,9 +39,9 @@ type DrainingPipeWriter struct {
 //
 // N.B. The Writer end of this pipe will not work with io.Copy because it
 // returns an error when the pipe is full (but the pipe is still valid).
-func DrainingPipe(capacity int, tell chan<- struct{}) (*DrainingPipeReader, *DrainingPipeWriter) {
+func DrainingPipe(capacity int, sig chan<- struct{}) (*DrainingPipeReader, *DrainingPipeWriter) {
 	w := &DrainingPipeWriter{
-		tell:     tell,
+		sig:      sig,
 		capacity: capacity,
 	}
 	w.c.L = &w.m
@@ -63,19 +63,19 @@ func (r *DrainingPipeReader) Read(p []byte) (int, error) {
 	m := copy(r.buffer, r.buffer[n:])
 	r.buffer = r.buffer[:m]
 
-	// Tell that the drain completed
-	if r.draining && len(r.buffer) == 0 && r.tell != nil {
+	// Signal that the drain completed
+	if r.draining && len(r.buffer) == 0 && r.sig != nil {
 		r.draining = false
-		r.tell <- struct{}{}
+		r.sig <- struct{}{}
 	}
 
 	// Set error to EOF, if closed and we're at the end of the buffer
 	var err error
 	if r.closed && len(r.buffer) == 0 {
 		err = io.EOF
-		if r.tell != nil {
-			close(r.tell)
-			r.tell = nil
+		if r.sig != nil {
+			close(r.sig)
+			r.sig = nil
 		}
 	}
 
