@@ -20,11 +20,7 @@ type InfinitePipeWriter struct {
 
 // InfinitePipe is similar to io.Pipe() except that writes will always
 // succeed. Data will be added to an internal buffer that will always grow.
-// Additionally, you may supply a channel tell that will be told whenever
-// the Infinite channel has been emptied, so that more bytes can be requested
-// to be written.
-//
-// This pipe kind is useful when implementing simple congestion control.
+// Use with caution, as writers can use this to exhaust memory.
 func InfinitePipe() (*InfinitePipeReader, *InfinitePipeWriter) {
 	w := &InfinitePipeWriter{}
 	w.c.L = &w.m
