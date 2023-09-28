@@ -26,9 +26,11 @@ type DrainingPipeWriter struct {
 	capacity int
 }
 
-// DrainingPipe is similar to io.Pipe() except that writes will always
-// succeed (including the first write that overfills the buffer). Data will be
-// added to an internal buffer that can grow bigger than the specified capacity.
+// DrainingPipe is similar to InfinitePipe except that the first write to
+// an overfilled buffer will block.  For the avoidance of doubt:  the write
+// that initially overflows the buffer will succeed.  This means that the
+// buffer can grow arbitrarily bigger than the specified capacity.
+//
 // Additionally, you may supply a channel tell that will be told whenever
 // the draining channel has been emptied, so that more bytes can be requested
 // to be written.
